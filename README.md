@@ -26,7 +26,7 @@
     <ol>
         <li>Clona este repositorio.</li>
         <li>Asegúrate de tener levantado el entorno de https://github.com/n8n-io/self-hosted-ai-starter-kit.</li>
-        <li>Importa el archivo <code>n8n-workflow-ollama.json</code> en tu instancia de n8n.</li>
+        <li>Importa el archivo <code>n8n-komiland.json</code> en tu instancia de n8n.</li>
         <li>Configura las credenciales de <strong>PostgreSQL</strong> y la URL de <strong>Ollama</strong> (<code>http://host.docker.internal:11434</code>).</li>
     </ol>
 
