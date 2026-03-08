@@ -1,0 +1,208 @@
+{
+  "name": "Actividad_10",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chatbot",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -752,
+        -640
+      ],
+      "id": "49b42ae0-0959-429d-aeb6-c4f199421d91",
+      "name": "Webhook",
+      "webhookId": "c518cd86-c49f-4001-b074-badfae989f17"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Webhook').item.json.body.message }}",
+        "options": {
+          "systemMessage": "=Eres un asistente virtual de una tienda de comida llamada Komiland.\n\nKomiland es una tienda de comida española tradicional y ofrece los siguientes productos con sus precios aproximados:\n\n- Tortilla de patatas (con o sin cebolla): 8,50 €\n- Croquetas caseras:\n  - Jamón: 7,00 € (ración)\n  - Pollo: 6,50 € (ración)\n  - Queso: 6,50 € (ración)\n- Empanadillas variadas: 1,80 € la unidad\n- Paella:\n  - Mixta: 9,50 € por persona\n  - Marisco: 11,50 € por persona\n- Albóndigas en salsa: 8,90 € (ración)\n- Callos a la madrileña: 9,20 € (ración)\n- Gazpacho: 3,50 € (litro)\n- Salmorejo: 3,80 € (litro)\n- Pan artesano: 1,50 €\n- Postres caseros:\n  - Flan: 3,00 €\n  - Arroz con leche: 3,20 €\n  - Natillas: 3,00 €\n\nTu trabajo es responder de manera clara, amable y profesional, ayudando a los clientes con:\n- Información sobre productos y precios\n- Recomendaciones según gustos, presupuesto o número de personas\n- Consultas sobre pedidos, encargos y disponibilidad\n- Dudas generales sobre la tienda\n\nMantén siempre un tono cercano y educado, como si atendieras a un cliente habitual de la tienda.\n\nContexto de la conversación (mensajes anteriores):\n{{ $json.data }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        -176,
+        -640
+      ],
+      "id": "d00da573-ae89-4b0c-8b32-519d463be27a",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -208,
+        -464
+      ],
+      "id": "dddfd6a6-8581-4c1c-be6c-a58cf056dcbe",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "xHuYe0MDGOs9IpBW",
+          "name": "Local Ollama service"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Webhook').item.json.body.session_id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        -96,
+        -464
+      ],
+      "id": "c2469c5d-cf6a-434f-8470-536120a813cf",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "A7TraVCdyC0L15xy",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        -640
+      ],
+      "id": "29298b4c-46d9-439f-a87d-39e381482f89",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT message FROM n8n_chat_histories WHERE session_id = '{{ $json.body.session_id }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -544,
+        -640
+      ],
+      "id": "49cc3963-6b44-4034-9ee2-f6502db23138",
+      "name": "Execute a SQL query",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "A7TraVCdyC0L15xy",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        144,
+        -640
+      ],
+      "id": "3a34acfe-65d7-4180-8d27-d848029401b7",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "0473ed22-e6cd-440d-b290-8c3f9bd070c7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "id": "gbt6cshA9rIXtsln",
+  "tags": []
+}
